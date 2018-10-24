@@ -1,0 +1,47 @@
+#ifndef tree_hpp
+#define tree_hpp
+#define FIX_VAL 0
+
+#define FUNC_VAR -1
+#define FUNC_CON 0
+#define FUNC_SIN 1
+#define FUNC_ADD 2
+#define FUNC_MIN 3
+#define FUNC_TIM 4
+#define FUNC_DIV 4
+
+#include <vector>
+#include <string>
+#include <sstream>
+#include <iostream>
+
+using namespace std;
+
+class CNode{
+    public:
+    CNode();
+    CNode(stringstream& s);
+    ~CNode();
+
+
+
+    private:
+    int iNodeType;
+
+    vector<CNode*> vpcChild;
+
+    int iVal;
+    string sName;
+};
+
+class CTree{
+    public:
+    CTree();
+    ~CTree();
+
+
+    private:
+    CNode* pcRoot;
+};
+
+#endif

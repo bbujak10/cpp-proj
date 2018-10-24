@@ -1,0 +1,190 @@
+#include "tree.hpp"
+
+bool isInteger(string &s){
+    if(s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+'))) return false ;
+    for(int i=1; i<s.length(); i++){
+        if(!isdigit(s[i])) return false;
+    }
+    return true;
+}
+int stringToInt(string &s){
+    return strtol(s.c_str(), NULL, 10);
+}
+int find(vector<string> &v, string &s){
+    for(int i=0; i<v.size(); i++){
+        if(v[i] == s) return i;
+    }
+    return -1;
+}
+
+//____________TREE______________
+
+
+CTree::CTree(){
+    pcRoot = NULL;
+    cout << "c: Tree\n";
+}
+
+CTree::~CTree(){
+    delete pcRoot;
+    cout << "d: Tree\n";
+}
+
+int CTree::enter(stringstream &ss){
+    bool fixed = false;
+
+    if(pcRoot != NULL){
+        delete pcRoot;
+    }
+    else{
+        pcRoot = new CNode(ss, fixed);
+    }
+
+    if(fixed)
+        return WAR_NOTENOUGHARG;
+    else if (!(ss.eof())) 
+        return WAR_TOOMANYARG;
+    return 0;
+}
+
+string CTree::print(){
+    stringstream ss;
+    pcRoot->print(ss);
+    ss << "\n";
+    return ss.str();
+}
+
+vector<string> CTree::getVars(){
+    vector<string> v;
+    pcRoot->getVars(v);
+    return v;
+}
+
+int CTree::comp(vector<int> &val, int &err){
+    vector<string> var;
+    return pcRoot->eval(var, val, err);
+}
+
+//___________NODE______________
+
+CNode::CNode(stringstream &ss, bool &fixed){
+    string func;
+    ss >> func;
+
+    cout << "c: " << func << endl;
+
+    if(func == "+"){
+        iNodeType = FUNC_ADD;
+        vpcChild.push_back(new CNode(ss, fixed));
+        vpcChild.push_back(new CNode(ss, fixed));
+    }
+    else if(func == "-"){
+        iNodeType = FUNC_MIN;
+        vpcChild.push_back(new CNode(ss, fixed));
+        vpcChild.push_back(new CNode(ss, fixed));
+    }
+    else if(func == "*"){
+        iNodeType = FUNC_TIM;
+        vpcChild.push_back(new CNode(ss, fixed));
+        vpcChild.push_back(new CNode(ss, fixed));
+    }
+    else if(func == "/"){
+        iNodeType = FUNC_DIV;
+        vpcChild.push_back(new CNode(ss, fixed));
+        vpcChild.push_back(new CNode(ss, fixed));
+    }
+    else if(func == "sin"){
+        iNodeType = FUNC_SIN;
+        vpcChild.push_back(new CNode(ss, fixed));
+    }
+    else if(isInteger(func)){
+        iNodeType = FUNC_CON;
+        iVal = stringToInt(func);
+    }
+    else if(func.empty()){
+        iNodeType = FUNC_CON;
+        iVal = FIX_VAL;
+        fixed = true;
+    }
+    else{
+        iNodeType = FUNC_VAR;
+        sName = func;
+    }
+}
+
+CNode::~CNode(){
+    for(int i = 0; i<vpcChild.size(); i++){
+        delete vpcChild[i];
+    }
+
+    cout << "d: " << iNodeType << endl;
+}
+
+void CNode::print(stringstream &ss){
+    if(iNodeType == FUNC_ADD){
+        ss << "+ ";
+    }
+    else if(iNodeType == FUNC_MIN){
+        ss << "- ";
+    }
+    else if(iNodeType == FUNC_TIM){
+        ss << "* ";
+    }
+    else if(iNodeType == FUNC_DIV){
+        ss << "/ ";
+    }
+    else if(iNodeType == FUNC_SIN){
+        ss << "sin ";
+    }
+    else if(iNodeType == FUNC_CON){
+        ss << iVal << " ";
+    }
+    else if(iNodeType == FUNC_VAR){
+        ss << sName << " ";
+    }
+    for(int i = 0; i<vpcChild.size(); i++){
+        vpcChild[i]->print(ss);
+    }
+}
+
+void CNode::getVars(vector<string> &v){
+    if(iNodeType == FUNC_VAR){
+        if(find(v, sName) == -1) v.push_back(sName);
+    }
+    for(int i = 0; i<vpcChild.size(); i++){
+        vpcChild[i]->getVars(v);
+    }
+}
+
+int CNode::eval(vector<string> &var, vector<int> &val, int &err){
+    if(iNodeType == FUNC_ADD){
+        return vpcChild[0]->eval(var, val, err) + vpcChild[1]->eval(var, val, err);
+    }
+    else if(iNodeType == FUNC_MIN){
+        return vpcChild[0]->eval(var, val, err) - vpcChild[1]->eval(var, val, err);
+    }
+    else if(iNodeType == FUNC_TIM){
+        return vpcChild[0]->eval(var, val, err) * vpcChild[1]->eval(var, val, err);
+    }
+    else if(iNodeType == FUNC_DIV){
+        return vpcChild[0]->eval(var, val, err) / vpcChild[1]->eval(var, val, err);
+    }
+    else if(iNodeType == FUNC_SIN){
+        return round(sin((double)(vpcChild[0]->eval(var, val, err))));
+    }
+    else if(iNodeType == FUNC_VAR){
+        int found = find(var, sName);
+        if(found != -1) return val[found];
+        else{
+            var.push_back(sName);
+            if(val.size() < var.size()) {
+                err = WAR_NOTENOUGHARG;
+                return 1;
+            }
+            return val[var.size()-1];
+        }
+    }
+    else{
+        return iVal;
+    }
+}
